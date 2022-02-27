@@ -45,6 +45,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   String dropdownValue = 'Cast Members';
   List<String> itemList = [];
   late String selected ;
+  bool _isLoading = false;
 
   void getCast(){
     Navigator.of(context).push(MaterialPageRoute(
@@ -54,30 +55,54 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
 
 
-  Future doTask() async {
+  Future doTask()  {
 
-    await SearchGenerator.generateSearch2(_movieNameController.text);
-    setState(() {
+   return SearchGenerator.generateSearch2(_movieNameController.text).then((value){
 
-      //SecureStorage.writeSecureData("searchNumber", searchNumber.toString());
-      SecureStorage.writeSecureData("title", SearchGenerator.title);
-      SecureStorage.writeSecureData("id", SearchGenerator.id);
-      SecureStorage.writeSecureData("overview", SearchGenerator.overview);
-      SecureStorage.writeSecureData("release", SearchGenerator.release);
-      SecureStorage.writeSecureData("runtime", SearchGenerator.runtime);
-      SecureStorage.writeSecureData("cast", SearchGenerator.cast);
-      SecureStorage.writeSecureData("castID", SearchGenerator.castID);
-      selected = SearchGenerator.cast.split(',')[0];
+      setState(() {
+
+        //SecureStorage.writeSecureData("searchNumber", searchNumber.toString());
+        SecureStorage.writeSecureData("title", SearchGenerator.title);
+        SecureStorage.writeSecureData("id", SearchGenerator.id);
+        SecureStorage.writeSecureData("overview", SearchGenerator.overview);
+        SecureStorage.writeSecureData("release", SearchGenerator.release);
+        SecureStorage.writeSecureData("runtime", SearchGenerator.runtime);
+        SecureStorage.writeSecureData("cast", SearchGenerator.cast);
+        SecureStorage.writeSecureData("castID", SearchGenerator.castID);
+        selected = SearchGenerator.cast.split(',')[0];
+
+      });
+
+
 
     });
 
+
+  }
+
+  void submitSearch() async {
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    await doTask();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    //return SecureStorage.readSecureData("cast");
   }
 
   @override
   void initState() {
     // TODO: implement initState
     setState(() {
-      selected = SearchGenerator.cast.split(',')[0];
+      //selected = SearchGenerator.cast.split(',')[0];
+      SecureStorage.readSecureData("cast").then((value){
+        selected = value.split(',')[0];
+      });
     });
 
 
@@ -269,62 +294,74 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
                   FutureBuilder(future: SecureStorage.readSecureData("cast"),
                       builder: (context, snapshot) {
-                        if (snapshot.hasData && selected != ""  ) {
+                        try {
+
+                          if ( _isLoading == true) {
+                            return const Text(
+                                'Loading...', style: TextStyle(fontSize: 30));
+                          }
 
 
-                          List<String> dropDownItemList = (snapshot.data.toString()).split(',');
+                          else if (snapshot.hasData && _isLoading == false) {
+                            List<String> dropDownItemList = (snapshot.data
+                                .toString()).split(',');
 
 
-                          return DropdownButton<String>(
-                            value: selected,
-                            hint: const Text("Select Cast"),
-                            items: dropDownItemList.map((String value) {
-                              return DropdownMenuItem<String>(
+                            return DropdownButton<String>(
+                              value: selected,
+                              hint: const Text("Select Cast"),
+                              items: dropDownItemList.map((String value) {
+                                return DropdownMenuItem<String>(
 
-                                value: value,
-                                child: InkWell(child: Text(value)),
-                              );
-                            }).toList(),
-                            onChanged: (selectedText) {
-                              setState(() {
-                                selected = selectedText!;
-                                //String idSelected = SearchGenerator.castID.split(",")[dropDownItemList.indexOf(selected)];
-                                CastGenerator.generateCast(
-                                    SearchGenerator.castID.split(
-                                        ",")[dropDownItemList.indexOf(
-                                        selected)]);
-                                //print("selected:" + idSelected);
+                                  value: value,
+                                  child: InkWell(child: Text(value)),
+                                );
+                              }).toList(),
+                              onChanged: (selectedText) {
+                                setState(() {
+                                  selected = selectedText!;
+                                  //String idSelected = SearchGenerator.castID.split(",")[dropDownItemList.indexOf(selected)];
+                                  CastGenerator.generateCast(
+                                      SearchGenerator.castID.split(
+                                          ",")[dropDownItemList.indexOf(
+                                          selected)]);
+                                  //print("selected:" + idSelected);
 
-                              });
-                            },
+                                });
+                              },
 
 
-                          );
-                        }
+                            );
+                          }
 
-                        else {
-                          return DropdownButton<String>(
-                            value: "No Cast",
-                            icon: const Icon(Icons.arrow_downward),
-                            elevation: 16,
-                            style: const TextStyle(color: Colors.deepPurple),
-                            underline: Container(
-                              height: 2,
-                              color: Colors.deepPurpleAccent,
-                            ),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                dropdownValue = newValue!;
-                              });
-                            },
-                            items: <String>['No Cast']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          );
+                          else {
+                            return DropdownButton<String>(
+                              value: "No Cast",
+                              icon: const Icon(Icons.arrow_downward),
+                              elevation: 16,
+                              style: const TextStyle(color: Colors.deepPurple),
+                              underline: Container(
+                                height: 2,
+                                color: Colors.deepPurpleAccent,
+                              ),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  dropdownValue = newValue!;
+                                });
+                              },
+                              items: <String>['No Cast']
+                                  .map<DropdownMenuItem<String>>((
+                                  String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            );
+                          }
+                        }catch(ex){
+                          return const Text(
+                              'Loading...', style: TextStyle(fontSize: 30));
                         }
                       }
                   ),
@@ -335,7 +372,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                       padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                       child: ElevatedButton(
                         child: const Text("Search Movie"),
-                        onPressed: doTask,
+                        onPressed: submitSearch,
                       )
                   ),
 
