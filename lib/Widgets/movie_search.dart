@@ -55,7 +55,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
 
 
-  Future doTask()  {
+  Future doTask() async {
 
    return SearchGenerator.generateSearch2(_movieNameController.text).then((value){
 
