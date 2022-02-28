@@ -77,7 +77,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
                     TableRow(
                         children: [
-                          const Text("name",textScaleFactor: 1,style: TextStyle(fontWeight: FontWeight.bold),),
+                          const Text("Name",textScaleFactor: 1,style: TextStyle(fontWeight: FontWeight.bold),),
 
 
                           Text( CastGenerator.name, textScaleFactor: 1),
